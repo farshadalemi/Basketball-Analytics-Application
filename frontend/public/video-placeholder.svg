@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="320" height="180" viewBox="0 0 320 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="320" height="180" fill="#1A1A1A"/>
+  <rect x="10" y="10" width="300" height="160" rx="8" fill="#2A2A2A"/>
+  <circle cx="160" cy="90" r="40" fill="#3A3A3A"/>
+  <path d="M150 70L180 90L150 110V70Z" fill="#FFFFFF"/>
+  <text x="160" y="150" font-family="Arial" font-size="14" fill="#FFFFFF" text-anchor="middle">Video Preview</text>
+</svg>
