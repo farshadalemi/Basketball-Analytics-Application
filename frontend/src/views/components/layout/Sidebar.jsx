@@ -24,7 +24,8 @@ import {
   Person as UserIcon,
   Settings as SettingsIcon,
   AdminPanelSettings as AdminIcon,
-  PeopleOutline as UsersIcon
+  PeopleOutline as UsersIcon,
+  Assessment as ScoutingIcon
 } from '@mui/icons-material';
 
 /**
@@ -51,6 +52,11 @@ const Sidebar = ({ open, onClose }) => {
       text: 'Upload Video',
       icon: <UploadIcon />,
       path: '/upload'
+    },
+    {
+      text: 'Scouting Reports',
+      icon: <ScoutingIcon />,
+      path: '/scouting'
     }
   ];
 

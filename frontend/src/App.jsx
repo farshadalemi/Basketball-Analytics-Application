@@ -28,6 +28,10 @@ const VideoDetailsPage = React.lazy(() => import('./views/pages/VideoDetailsPage
 const UploadVideoPage = React.lazy(() => import('./views/pages/UploadVideoPage'));
 const ProfilePage = React.lazy(() => import('./views/pages/ProfilePage'));
 
+// Scouting report pages
+const ScoutingReportPage = React.lazy(() => import('./views/pages/ScoutingReportPage'));
+const ReportDetailsPage = React.lazy(() => import('./views/pages/ReportDetailsPage'));
+
 // Admin pages
 const AdminDashboard = React.lazy(() => import('./views/pages/admin/AdminDashboard'));
 const UserManagement = React.lazy(() => import('./views/pages/admin/UserManagement'));
@@ -82,6 +86,10 @@ const App = () => {
                     <Route path="/videos/:id" element={<VideoDetailsPage />} />
                     <Route path="/upload" element={<UploadVideoPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
+
+                    {/* Scouting Report Routes */}
+                    <Route path="/scouting" element={<ScoutingReportPage />} />
+                    <Route path="/scouting/reports/:reportId" element={<ReportDetailsPage />} />
 
                     {/* Admin Routes */}
                     <Route path="/admin" element={<AdminDashboard />} />

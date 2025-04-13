@@ -15,7 +15,8 @@ import {
 import {
   VideoLibrary as VideoIcon,
   Upload as UploadIcon,
-  BarChart as AnalyticsIcon
+  BarChart as AnalyticsIcon,
+  Assessment as ScoutingIcon
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -71,6 +72,13 @@ const Dashboard = () => {
       icon: <UploadIcon sx={{ fontSize: 60, color: 'secondary.main' }} />,
       action: () => navigate('/upload'),
       buttonText: 'Upload New'
+    },
+    {
+      title: 'Scouting Reports',
+      description: 'Generate scouting reports for opponent teams',
+      icon: <ScoutingIcon sx={{ fontSize: 60, color: 'info.main' }} />,
+      action: () => navigate('/scouting'),
+      buttonText: 'View Reports'
     },
     {
       title: 'Analytics',
