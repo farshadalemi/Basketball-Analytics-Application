@@ -1,0 +1,29 @@
+# Core dependencies
+fastapi>=0.104.1
+uvicorn>=0.23.2
+sqlalchemy>=2.0.22
+psycopg2-binary>=2.9.9
+python-jose>=3.3.0
+passlib>=1.7.4
+bcrypt>=4.0.1
+python-multipart>=0.0.6
+minio>=7.1.15
+python-dotenv>=1.0.0
+pydantic>=2.4.2
+pydantic-settings>=2.0.3
+alembic>=1.12.0
+email-validator>=2.0.0
+
+# HTTP client
+httpx>=0.25.0
+
+# PDF generation
+reportlab>=4.0.4
+weasyprint>=60.1
+
+# Computer vision (for video analysis)
+opencv-python>=4.8.1.78
+numpy>=1.26.0
+
+# Logging
+python-json-logger>=2.0.7
