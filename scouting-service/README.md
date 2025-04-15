@@ -4,18 +4,25 @@ A microservice for generating scouting reports from basketball game videos.
 
 ## Features
 
-- Process opponent game videos
-- Detect and track players
-- Analyze player movements and statistics
-- Generate PDF scouting reports
+- Process opponent game videos (supports full 40-minute games)
+- Advanced player detection and tracking using YOLOv8
+- Ball tracking and shot detection
+- Court detection and mapping
+- Team defense analysis with pose estimation
+- Shot chart generation with zone analysis
+- Player movement analysis and heatmaps
+- Play type detection and analysis
+- Advanced metrics calculation
+- Comprehensive PDF scouting reports
 - Integrate with the main basketball analytics platform
 
 ## Tech Stack
 
 - **Backend**: FastAPI (Python)
 - **Database**: PostgreSQL
-- **Storage**: MinIO (for reports)
-- **Computer Vision**: OpenCV, NumPy
+- **Storage**: MinIO (for reports and videos)
+- **Computer Vision**: OpenCV, YOLOv8, MediaPipe
+- **Machine Learning**: NumPy, SciPy, scikit-learn
 - **PDF Generation**: ReportLab, WeasyPrint
 - **Containerization**: Docker
 
@@ -89,15 +96,47 @@ DELETE /api/reports/{report_id}
   - `models/`: SQLAlchemy models
   - `schemas/`: Pydantic schemas
   - `services/`: Business logic
+    - `video_analysis_service.py`: Video processing and analysis
+    - `pdf_generator_service.py`: PDF report generation
   - `utils/`: Utility functions
+    - `video_chunker.py`: Video chunking for large files
+    - `player_detector.py`: Player detection and tracking
+    - `ball_detector.py`: Ball detection and shot tracking
+    - `court_detector.py`: Court detection and mapping
+    - `team_defense_analysis.py`: Team defense analysis
+    - `pose_estimation.py`: Player pose estimation
 - `alembic/`: Database migrations
 - `scripts/`: Utility scripts
+- `tests/`: Test files
+  - `data/`: Sample data for testing
+
+### Sample Data
+
+To test the service with sample data, place a basketball video file in the `tests/data` directory with the name `sample_basketball.mp4`.
 
 ### Running Tests
 
 ```
 pytest
 ```
+
+### Troubleshooting
+
+#### Database Connection Issues
+
+If you encounter database connection issues, make sure:
+
+1. The PostgreSQL service is running
+2. The database credentials are correct in the environment variables
+3. The PostgreSQL client is installed in the container
+
+#### Video Processing Issues
+
+If video processing fails:
+
+1. Check that OpenCV is properly installed
+2. Ensure the video format is supported (MP4 recommended)
+3. Check the logs for specific error messages
 
 ## License
 

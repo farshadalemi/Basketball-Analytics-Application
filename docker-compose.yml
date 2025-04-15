@@ -68,6 +68,8 @@ services:
       - db
       - minio
       - backend
+    command: >
+      /bin/bash -c "chmod +x /app/scripts/start.sh && /app/scripts/start.sh"
     networks:
       - app-network
 

@@ -2,7 +2,7 @@ FROM python:3.12
 
 WORKDIR /app
 
-# Install system dependencies for OpenCV and WeasyPrint
+# Install system dependencies for OpenCV, WeasyPrint, and PostgreSQL client
 RUN apt-get update && apt-get install -y \
     libgl1-mesa-glx \
     libglib2.0-0 \
@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     libgdk-pixbuf2.0-0 \
     libffi-dev \
     shared-mime-info \
+    postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements file
@@ -34,6 +35,9 @@ RUN wget -O /usr/local/bin/wait-for-it.sh https://raw.githubusercontent.com/vish
 # Expose port
 EXPOSE 8001
 
+# Create a startup script
+COPY scripts/start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
 # Command to run the application
-CMD /usr/local/bin/wait-for-it.sh db:5432 -t 60 -- \
-    uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
+CMD ["/app/start.sh"]

@@ -1,4 +1,5 @@
 """Routes for scouting reports."""
+import os
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Query, Path
@@ -23,22 +24,22 @@ async def create_report(
 ) -> Dict[str, Any]:
     """
     Create a new scouting report.
-    
+
     This endpoint initiates the creation of a scouting report based on a video.
     The report generation happens asynchronously in the background.
     """
     logger.info(f"Creating report for video {report_in.video_id}")
-    
+
     # Create report in database
     report = report_service.create_report(db=db, report_in=report_in)
-    
+
     # Start report generation in background
     background_tasks.add_task(
         report_service.generate_report,
         db=db,
         report_id=report.id
     )
-    
+
     return ResponseModel.success(
         data={"report_id": report.id, "status": report.status},
         message="Report creation initiated",
@@ -56,13 +57,13 @@ async def list_reports(
 ) -> Dict[str, Any]:
     """
     List scouting reports.
-    
+
     Optionally filter by user_id.
     """
     reports = report_service.get_reports(
         db=db, user_id=user_id, skip=skip, limit=limit
     )
-    
+
     return ResponseModel.success(
         data=reports,
         message="Reports retrieved successfully",
@@ -84,7 +85,7 @@ async def get_report(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Report not found",
         )
-    
+
     return ResponseModel.success(
         data=report,
         message="Report retrieved successfully",
@@ -106,7 +107,18 @@ async def download_report(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Report file not found",
         )
-    
+
+    # Check if the file exists
+    if not os.path.exists(report_path):
+        logger.error(f"Report file not found at path: {report_path}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Report file not found on disk",
+        )
+
+    # Log the download attempt
+    logger.info(f"Serving report file: {report_path}")
+
     return FileResponse(
         path=report_path,
         filename=f"scouting_report_{report_id}.pdf",
@@ -129,7 +141,7 @@ async def delete_report(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Report not found",
         )
-    
+
     return ResponseModel.success(
         message="Report deleted successfully",
     )

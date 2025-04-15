@@ -24,6 +24,16 @@ weasyprint>=60.1
 # Computer vision (for video analysis)
 opencv-python>=4.8.1.78
 numpy>=1.26.0
+mediapipe>=0.10.0  # For pose estimation
+scipy>=1.11.0  # For spatial calculations
+scikit-learn>=1.3.0  # For clustering algorithms
+
+# YOLOv8 for enhanced pose estimation and player detection
+# If installation fails, the system will fall back to MediaPipe
+ultralytics>=8.0.0  # YOLOv8
+
+# Image processing
+pillow>=10.0.0  # For image processing
 
 # Logging
 python-json-logger>=2.0.7

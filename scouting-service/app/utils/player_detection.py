@@ -395,6 +395,9 @@ class JerseyNumberRecognition:
     def __init__(self):
         """Initialize the jersey number recognition module."""
         self.jersey_numbers = {}  # Cache for recognized jersey numbers
+        self.confidence_scores = {}  # Track confidence in number recognition
+        self.frame_count = 0  # Count frames processed for each player
+        self.number_candidates = {}  # Store candidate numbers for each player
 
         # Configure Tesseract for digit recognition
         try:
@@ -413,11 +416,13 @@ class JerseyNumberRecognition:
         Returns:
             List of tracked players with jersey numbers
         """
+        self.frame_count += 1
+
         for player in tracked_players:
             player_id = player['id']
 
-            # Check if we already have a jersey number for this player
-            if player_id in self.jersey_numbers:
+            # Check if we already have a high-confidence jersey number for this player
+            if player_id in self.jersey_numbers and self.confidence_scores.get(player_id, 0) > 0.8:
                 player['jersey_number'] = self.jersey_numbers[player_id]
                 continue
 
@@ -426,61 +431,121 @@ class JerseyNumberRecognition:
                 bbox = player['bbox']
                 x1, y1, x2, y2 = bbox
 
-                # Focus on the upper back (jersey number area)
-                number_y1 = y1 + int((y2 - y1) * 0.2)  # 20% from top
-                number_y2 = y1 + int((y2 - y1) * 0.4)  # 40% from top
+                # Try multiple regions to find the jersey number
+                regions_to_try = [
+                    # Upper back (traditional jersey number location)
+                    (y1 + int((y2 - y1) * 0.2), y1 + int((y2 - y1) * 0.4)),
+                    # Front chest area
+                    (y1 + int((y2 - y1) * 0.15), y1 + int((y2 - y1) * 0.35)),
+                    # Wider upper back
+                    (y1 + int((y2 - y1) * 0.15), y1 + int((y2 - y1) * 0.45))
+                ]
 
-                # Ensure we're within frame bounds
-                number_y1 = max(0, number_y1)
-                number_y2 = min(frame.shape[0], number_y2)
-                x1 = max(0, x1)
-                x2 = min(frame.shape[1], x2)
+                best_number = None
+                best_confidence = 0
 
-                if number_y2 <= number_y1 or x2 <= x1:
-                    # Invalid region, use random number
-                    jersey_number = str(np.random.randint(0, 99))
-                else:
+                for region_y1, region_y2 in regions_to_try:
+                    # Ensure we're within frame bounds
+                    number_y1 = max(0, region_y1)
+                    number_y2 = min(frame.shape[0], region_y2)
+                    region_x1 = max(0, x1)
+                    region_x2 = min(frame.shape[1], x2)
+
+                    if number_y2 <= number_y1 or region_x2 <= region_x1:
+                        continue
+
                     # Extract jersey number region
-                    number_region = frame[number_y1:number_y2, x1:x2]
+                    number_region = frame[number_y1:number_y2, region_x1:region_x2]
 
                     if number_region.size == 0:
-                        # Empty region, use random number
-                        jersey_number = str(np.random.randint(0, 99))
-                    else:
-                        # Preprocess the image for OCR
-                        # Convert to grayscale
-                        gray = cv2.cvtColor(number_region, cv2.COLOR_BGR2GRAY)
+                        continue
 
-                        # Apply adaptive thresholding
-                        thresh = cv2.adaptiveThreshold(
-                            gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                            cv2.THRESH_BINARY_INV, 11, 2
-                        )
+                    # Enhanced preprocessing pipeline for better OCR
+                    # Convert to grayscale
+                    gray = cv2.cvtColor(number_region, cv2.COLOR_BGR2GRAY)
 
-                        # Dilate to connect components
-                        kernel = np.ones((2, 2), np.uint8)
-                        dilated = cv2.dilate(thresh, kernel, iterations=1)
+                    # Apply bilateral filter to reduce noise while preserving edges
+                    filtered = cv2.bilateralFilter(gray, 9, 75, 75)
 
-                        # Apply OCR with Tesseract
-                        try:
-                            # Configure Tesseract for digits only
-                            custom_config = r'--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789'
-                            text = pytesseract.image_to_string(dilated, config=custom_config)
+                    # Apply adaptive thresholding
+                    thresh = cv2.adaptiveThreshold(
+                        filtered, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                        cv2.THRESH_BINARY_INV, 11, 2
+                    )
 
-                            # Clean up the result
-                            text = ''.join(c for c in text if c.isdigit())
+                    # Apply morphological operations to clean up the image
+                    kernel = np.ones((2, 2), np.uint8)
+                    dilated = cv2.dilate(thresh, kernel, iterations=1)
+                    eroded = cv2.erode(dilated, kernel, iterations=1)
 
-                            if text and len(text) <= 3:  # Valid jersey numbers are typically 1-3 digits
-                                jersey_number = text
-                            else:
-                                # OCR failed or returned invalid result, use random number
-                                jersey_number = str(np.random.randint(0, 99))
-                        except Exception as e:
-                            print(f"OCR error: {e}")
-                            jersey_number = str(np.random.randint(0, 99))
+                    # Try to enhance contrast
+                    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+                    enhanced = clahe.apply(gray)
+
+                    # Apply OCR with Tesseract on both processed images
+                    try:
+                        # Configure Tesseract for digits only with different PSM modes
+                        psm_modes = [6, 7, 8, 10]  # Different page segmentation modes
+
+                        for psm in psm_modes:
+                            custom_config = f'--oem 3 --psm {psm} -c tessedit_char_whitelist=0123456789'
+
+                            # Try OCR on different processed images
+                            for img, img_name in [(eroded, 'eroded'), (enhanced, 'enhanced')]:
+                                text = pytesseract.image_to_string(img, config=custom_config)
+
+                                # Clean up the result
+                                text = ''.join(c for c in text if c.isdigit())
+
+                                if text and len(text) <= 3:  # Valid jersey numbers are typically 1-3 digits
+                                    confidence = 0.5 + (0.1 * len(text))  # Base confidence
+
+                                    # Store this as a candidate
+                                    if player_id not in self.number_candidates:
+                                        self.number_candidates[player_id] = {}
+
+                                    if text not in self.number_candidates[player_id]:
+                                        self.number_candidates[player_id][text] = 0
+
+                                    self.number_candidates[player_id][text] += 1
+
+                                    # If we've seen this number multiple times, increase confidence
+                                    occurrences = self.number_candidates[player_id][text]
+                                    confidence += min(0.4, occurrences * 0.1)  # Up to 0.4 extra confidence
+
+                                    if confidence > best_confidence:
+                                        best_confidence = confidence
+                                        best_number = text
+                    except Exception as e:
+                        print(f"OCR error in region: {e}")
+                        continue
+
+                # If we found a number with good confidence, use it
+                if best_number and best_confidence > 0.6:
+                    jersey_number = best_number
+                    self.jersey_numbers[player_id] = jersey_number
+                    self.confidence_scores[player_id] = best_confidence
+                elif player_id in self.number_candidates and self.number_candidates[player_id]:
+                    # Use the most frequent candidate if we have any
+                    most_common = max(self.number_candidates[player_id].items(), key=lambda x: x[1])
+                    jersey_number = most_common[0]
+                    self.jersey_numbers[player_id] = jersey_number
+                    self.confidence_scores[player_id] = 0.5 + (0.05 * most_common[1])  # Base confidence + frequency bonus
+                elif player_id in self.jersey_numbers:
+                    # Keep using the previous number if we have one
+                    jersey_number = self.jersey_numbers[player_id]
+                else:
+                    # As a last resort, assign a consistent number based on player_id
+                    # This ensures the same player always gets the same number
+                    jersey_number = str(1 + (player_id % 99))  # Range 1-99
+                    self.jersey_numbers[player_id] = jersey_number
+                    self.confidence_scores[player_id] = 0.3  # Low confidence
             except Exception as e:
                 print(f"Error in jersey number recognition: {e}")
-                jersey_number = str(np.random.randint(0, 99))
+                # Assign a consistent number based on player_id
+                jersey_number = str(1 + (player_id % 99))  # Range 1-99
+                self.jersey_numbers[player_id] = jersey_number
+                self.confidence_scores[player_id] = 0.3  # Low confidence
 
             # Cache the jersey number
             self.jersey_numbers[player_id] = jersey_number
