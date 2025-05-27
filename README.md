@@ -2,6 +2,11 @@
 
 A full-stack web application for uploading and streaming videos, built with React (frontend) and FastAPI (backend), using PostgreSQL for database storage and MinIO for video file storage.
 
+
+![Image](https://github.com/user-attachments/assets/f3b28047-14ab-4443-ad0b-01c9773229e2)
+
+![Image](https://github.com/user-attachments/assets/658b69ca-5e27-492c-8df9-eac279572871)
+
 ## Features
 
 - User registration and authentication
