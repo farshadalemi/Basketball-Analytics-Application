@@ -1,0 +1,81 @@
+# Core dependencies
+fastapi>=0.104.1
+uvicorn>=0.23.2
+sqlalchemy>=2.0.22
+psycopg2-binary>=2.9.9
+python-jose>=3.3.0
+passlib>=1.7.4
+bcrypt>=4.0.1
+python-multipart>=0.0.6
+minio>=7.1.15
+python-dotenv>=1.0.0
+pydantic>=2.4.2
+pydantic-settings>=2.0.3
+alembic>=1.12.0
+email-validator>=2.0.0
+
+# HTTP client
+httpx>=0.25.0
+
+# Server-Sent Events for real-time updates
+sse-starlette>=1.6.5
+
+# PDF generation
+reportlab>=4.0.4
+weasyprint>=60.1
+
+# Computer Vision & Machine Learning - CPU-Only Stack
+# Core computer vision
+opencv-python>=4.8.1.78
+opencv-contrib-python>=4.8.1.78  # Additional OpenCV modules
+numpy>=1.24.0,<2.0.0  # Compatible with PyTorch and CV libraries
+scipy>=1.11.0
+scikit-image>=0.22.0
+
+# CPU-only PyTorch (will be installed separately in Dockerfile)
+# torch>=2.1.0,<2.5.0  # PyTorch for deep learning - CPU only
+# torchvision>=0.16.0,<0.20.0  # Computer vision models and transforms - CPU only
+# torchaudio>=2.1.0,<2.5.0  # Audio processing - CPU only
+
+# State-of-the-art object detection and tracking
+ultralytics>=8.3.0  # YOLOv8/v9/v10/v11 - Latest YOLO models
+
+# Human pose estimation and body analysis
+mediapipe>=0.10.0  # Google's MediaPipe for pose estimation
+# Alternative pose estimation libraries
+# detectron2  # Facebook's advanced detection framework (install separately if needed)
+
+# Advanced OCR for jersey numbers
+paddleocr>=2.7.0  # PaddlePaddle OCR - excellent for sports jerseys
+easyocr>=1.7.0  # Easy OCR as fallback
+pytesseract>=0.3.10  # Tesseract OCR wrapper
+
+# Machine Learning and Data Science
+scikit-learn>=1.3.0,<1.6.0  # ML algorithms for clustering and classification
+pandas>=2.1.0,<3.0.0  # Data manipulation and analysis
+matplotlib>=3.7.0,<4.0.0  # Plotting and visualization
+seaborn>=0.12.0,<1.0.0  # Statistical data visualization
+plotly>=5.17.0,<6.0.0  # Interactive plotting for reports
+
+# Video processing and manipulation
+ffmpeg-python>=0.2.0  # Video processing
+imageio>=2.31.0  # Image and video I/O
+imageio-ffmpeg>=0.4.9  # FFmpeg plugin for imageio
+
+# Advanced image processing
+Pillow>=10.0.0,<11.0.0  # Python Imaging Library
+albumentations>=1.3.0,<2.0.0  # Advanced image augmentations
+
+# Sports analytics specific
+# trackpy>=0.6.0  # Particle tracking (useful for ball tracking)
+
+# Performance optimization
+numba>=0.58.0  # JIT compilation for numerical functions
+joblib>=1.3.0  # Parallel processing
+
+# Logging
+python-json-logger>=2.0.7
+
+# Development and debugging tools (optional but recommended)
+tqdm>=4.66.0  # Progress bars
+rich>=13.0.0  # Rich text and beautiful formatting

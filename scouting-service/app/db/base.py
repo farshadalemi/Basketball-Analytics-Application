@@ -5,3 +5,13 @@ from app.db.base_class import Base  # noqa
 # Now import the models that use it
 # pylint: disable=wrong-import-position
 from app.models.report import Report  # noqa
+from app.models.computer_vision import (  # noqa
+    VideoProcessingJob,
+    CourtDetection,
+    PlayerDetection,
+    TeamClassification,
+    BallDetection,
+    FormationAnalysis,
+    PlayAnalysis,
+    GameStatistics,
+)

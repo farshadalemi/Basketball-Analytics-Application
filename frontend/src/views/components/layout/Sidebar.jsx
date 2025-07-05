@@ -25,7 +25,8 @@ import {
   Settings as SettingsIcon,
   AdminPanelSettings as AdminIcon,
   PeopleOutline as UsersIcon,
-  Assessment as ScoutingIcon
+  Assessment as ScoutingIcon,
+  Visibility as ComputerVisionIcon
 } from '@mui/icons-material';
 
 /**
@@ -57,6 +58,11 @@ const Sidebar = ({ open, onClose }) => {
       text: 'Scouting Reports',
       icon: <ScoutingIcon />,
       path: '/scouting'
+    },
+    {
+      text: 'Computer Vision',
+      icon: <ComputerVisionIcon />,
+      path: '/computer-vision'
     }
   ];
 

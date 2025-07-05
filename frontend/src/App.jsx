@@ -32,6 +32,9 @@ const ProfilePage = React.lazy(() => import('./views/pages/ProfilePage'));
 const ScoutingReportPage = React.lazy(() => import('./views/pages/ScoutingReportPage'));
 const ReportDetailsPage = React.lazy(() => import('./views/pages/ReportDetailsPage'));
 
+// Computer Vision pages
+const ComputerVisionTest = React.lazy(() => import('./components/ComputerVision/ComputerVisionTest'));
+
 // Admin pages
 const AdminDashboard = React.lazy(() => import('./views/pages/admin/AdminDashboard'));
 const UserManagement = React.lazy(() => import('./views/pages/admin/UserManagement'));
@@ -90,6 +93,9 @@ const App = () => {
                     {/* Scouting Report Routes */}
                     <Route path="/scouting" element={<ScoutingReportPage />} />
                     <Route path="/scouting/reports/:reportId" element={<ReportDetailsPage />} />
+
+                    {/* Computer Vision Routes */}
+                    <Route path="/computer-vision" element={<ComputerVisionTest />} />
 
                     {/* Admin Routes */}
                     <Route path="/admin" element={<AdminDashboard />} />

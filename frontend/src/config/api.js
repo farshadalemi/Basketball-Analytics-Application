@@ -4,6 +4,7 @@
 
 // Get the API URL from environment variables or use default
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+const SCOUTING_API_URL = process.env.REACT_APP_SCOUTING_API_URL || 'http://localhost:8001/api';
 
 // API endpoints
 const ENDPOINTS = {
@@ -32,6 +33,18 @@ const ENDPOINTS = {
     USERS: `${API_URL}/admin/users`,
     VIDEOS: `${API_URL}/admin/videos`,
   },
+  SCOUTING: {
+    REPORTS: `${SCOUTING_API_URL}/reports`,
+    COMPUTER_VISION: {
+      PROCESS_VIDEO: `${SCOUTING_API_URL}/computer-vision/process-video`,
+      ANALYZE_IMAGE: `${SCOUTING_API_URL}/computer-vision/analyze-image`,
+      ANALYZE_IMAGE_VISUAL: `${SCOUTING_API_URL}/computer-vision/analyze-image-visual`,
+      ANALYZE_IMAGE_PROGRESSIVE: `${SCOUTING_API_URL}/computer-vision/analyze-image-progressive`,
+      JOBS: `${SCOUTING_API_URL}/computer-vision/jobs`,
+      JOB_STATUS: (id) => `${SCOUTING_API_URL}/computer-vision/jobs/${id}`,
+      RESULTS: (id) => `${SCOUTING_API_URL}/computer-vision/results/${id}`,
+    },
+  },
 };
 
-export { API_URL, ENDPOINTS };
+export { API_URL, SCOUTING_API_URL, ENDPOINTS };
