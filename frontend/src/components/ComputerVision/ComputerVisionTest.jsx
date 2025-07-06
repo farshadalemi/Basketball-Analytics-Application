@@ -344,16 +344,45 @@ const ComputerVisionTest = () => {
           {analysisResults.court_detection && (
             <Box sx={{ mb: 2 }}>
               <Typography variant="subtitle1" color="primary">
-                Court Detection
+                Court Detection (Enhanced)
               </Typography>
-              <Chip 
-                label={`Confidence: ${(analysisResults.court_detection.confidence_score * 100).toFixed(1)}%`}
-                color={analysisResults.court_detection.confidence_score > 0.7 ? 'success' : 'warning'}
-                size="small"
-              />
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1 }}>
+                <Chip
+                  label={`Confidence: ${(analysisResults.court_detection.confidence_score * 100).toFixed(1)}%`}
+                  color={analysisResults.court_detection.confidence_score > 0.7 ? 'success' : 'warning'}
+                  size="small"
+                />
+                {analysisResults.court_detection.detection_method && (
+                  <Chip
+                    label={`Method: ${analysisResults.court_detection.detection_method}`}
+                    color="info"
+                    size="small"
+                  />
+                )}
+              </Box>
               <Typography variant="body2" sx={{ mt: 1 }}>
                 Homography: {analysisResults.court_detection.has_homography ? 'Available' : 'Not available'}
               </Typography>
+              {analysisResults.court_detection.court_corners && (
+                <Typography variant="body2">
+                  Court Corners: {analysisResults.court_detection.court_corners.length} detected
+                </Typography>
+              )}
+              {analysisResults.court_detection.three_point_line && (
+                <Typography variant="body2">
+                  Three-Point Line: {analysisResults.court_detection.three_point_line.length} points detected
+                </Typography>
+              )}
+              {analysisResults.court_detection.free_throw_line && (
+                <Typography variant="body2">
+                  Free-Throw Line: {analysisResults.court_detection.free_throw_line.length} points detected
+                </Typography>
+              )}
+              {analysisResults.court_detection.center_circle && (
+                <Typography variant="body2">
+                  Center Circle: Detected (radius: {analysisResults.court_detection.center_circle.radius?.toFixed(1) || 'N/A'})
+                </Typography>
+              )}
             </Box>
           )}
 

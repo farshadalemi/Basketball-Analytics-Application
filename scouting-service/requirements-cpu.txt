@@ -72,6 +72,13 @@ albumentations>=1.3.0,<2.0.0  # Advanced image augmentations
 # Performance optimization
 numba>=0.58.0  # JIT compilation for numerical functions
 joblib>=1.3.0  # Parallel processing
+psutil>=5.9.0  # System and process utilities
+
+# Enhanced computer vision and tracking
+supervision>=0.16.0  # ByteTrack and advanced tracking utilities
+filterpy>=1.4.5  # Kalman filtering for ball tracking
+imutils>=0.5.4  # Computer vision utilities
+shapely>=2.0.0  # Geometric operations for court analysis
 
 # Logging
 python-json-logger>=2.0.7

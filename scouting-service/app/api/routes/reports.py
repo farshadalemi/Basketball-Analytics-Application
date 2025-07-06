@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.api.responses import ResponseModel
 from app.db.session import get_db
 from app.schemas.report import Report, ReportCreate, ReportUpdate, TeamAnalysis
-from app.services.report_service import report_service
+from app.services.analytics.services.report_service import report_service
 from app.core.logging import logger
 
 router = APIRouter(prefix="/reports", tags=["reports"])

@@ -11,7 +11,7 @@ from app.api.responses import ResponseModel
 from app.core.config import settings
 from app.core.logging import logger
 from app.api.errors import add_error_handlers
-from app.services.computer_vision import start_job_manager, stop_job_manager
+from app.services.video_processing import start_job_manager, stop_job_manager
 
 
 @asynccontextmanager

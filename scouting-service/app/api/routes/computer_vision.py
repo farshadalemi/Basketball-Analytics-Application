@@ -28,15 +28,43 @@ import numpy as np
 from app.db.session import get_db
 from app.core.logging import logger
 from app.api.responses import ResponseModel
-from app.services.computer_vision import (
-    VideoProcessor, 
+
+
+def convert_numpy_types(obj):
+    """
+    Convert numpy types to Python native types recursively for JSON serialization.
+
+    Args:
+        obj: Object that may contain numpy types
+
+    Returns:
+        Object with numpy types converted to Python native types
+    """
+    if isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, list):
+        return [convert_numpy_types(item) for item in obj]
+    elif isinstance(obj, tuple):
+        return tuple(convert_numpy_types(item) for item in obj)
+    elif isinstance(obj, dict):
+        return {key: convert_numpy_types(value) for key, value in obj.items()}
+    else:
+        return obj
+
+
+# Import services
+from app.services.video_processing import (
+    VideoProcessor,
     VideoProcessingConfig,
-    get_job_manager,
-    CourtDetector,
-    PlayerDetector,
-    TeamClassifier,
-    BallDetector
+    get_job_manager
 )
+from app.services.player_tracking import PlayerDetector, TeamClassifier
+from app.services.ball_detection import BallDetector
+from app.services.court_detection import SimplifiedCourtDetector
 from app.models.computer_vision import VideoProcessingJob
 
 router = APIRouter(prefix="/computer-vision", tags=["Computer Vision"])
@@ -229,15 +257,19 @@ async def analyze_image(
 
             analysis_results = {}
 
-            # Court detection
+            # Court detection with CNN-first approach
             if enable_court_detection:
-                court_detector = CourtDetector()
+                logger.info("Starting CNN-first court detection")
+                court_detector = SimplifiedCourtDetector()
                 court_features = court_detector.detect_court(frame)
-                analysis_results['court_detection'] = {
-                    'confidence_score': court_features.confidence_score,
-                    'court_corners': court_features.corners,
-                    'has_homography': court_features.homography_matrix is not None
-                }
+
+                # Log the results for debugging
+                logger.info(f"Court detection results: confidence={court_features.confidence_score:.3f}, "
+                           f"method={court_features.detection_method}, "
+                           f"corners={len(court_features.court_corners) if court_features.court_corners is not None else 0}")
+
+                # Convert to API response format
+                analysis_results['court_detection'] = court_features.to_dict()
 
             # Player detection
             if enable_player_detection:
@@ -294,6 +326,9 @@ async def analyze_image(
                     'confidence': ball_detection.confidence
                 }
 
+            # Convert numpy types to Python native types for JSON serialization
+            analysis_results = convert_numpy_types(analysis_results)
+
             return ResponseModel.success(
                 data=analysis_results,
                 message="Image analysis completed successfully"
@@ -348,11 +383,11 @@ async def analyze_image_visual(
             # Create a copy for visualization
             vis_frame = frame.copy()
 
-            # Court detection with visualization
+            # CNN-first court detection with visualization
             if enable_court_detection:
-                court_detector = CourtDetector()
+                court_detector = SimplifiedCourtDetector()
                 court_features = court_detector.detect_court(frame)
-                vis_frame = _draw_court_features(vis_frame, court_features)
+                vis_frame = court_detector.draw_court_features(vis_frame, court_features)
 
             # Player detection with visualization
             if enable_player_detection:
@@ -473,27 +508,42 @@ async def analyze_image_progressive(
 
                 await asyncio.sleep(0.1)  # Allow client to receive
 
-                # Court detection with progress
+                # Court detection with enhanced progress tracking
                 if enable_court_detection:
                     current_step += 1
+
+                    # Progress tracking for court detection
+                    def court_progress_callback(percentage, step_name):
+                        """Callback for court detection progress - this will be handled by the main generator"""
+                        pass  # We'll handle progress updates in the main flow
+
+                    court_detector = SimplifiedCourtDetector()
+                    # Use CNN-first detection with progress tracking
                     yield {
                         "event": "progress",
                         "data": json.dumps({
                             "percentage": int((current_step / total_steps) * 25),
-                            "step": "Detecting court features...",
+                            "step": "Detecting court features with enhanced algorithms...",
                             "current_step": current_step,
                             "total_steps": total_steps
                         })
                     }
 
-                    court_detector = CourtDetector()
-                    court_features = court_detector.detect_court(frame)
-                    vis_frame = _draw_court_features(vis_frame, court_features)
+                    court_features = court_detector.detect_court(frame, progress_callback=court_progress_callback)
+                    vis_frame = court_detector.draw_court_features(vis_frame, court_features)
 
-                    analysis_results['court_detection'] = {
-                        'confidence_score': court_features.confidence_score,
-                        'court_corners': court_features.corners,
-                        'has_homography': court_features.homography_matrix is not None
+                    # Convert to API response format
+                    analysis_results['court_detection'] = court_features.to_dict()
+
+                    # Send intermediate result
+                    yield {
+                        "event": "intermediate",
+                        "data": json.dumps({
+                            "type": "court_detection",
+                            "message": f"Court detected with {court_features.confidence_score:.1%} confidence",
+                            "confidence": court_features.confidence_score,
+                            "method": court_features.detection_method
+                        })
                     }
 
                     # Send intermediate result
@@ -796,10 +846,7 @@ def _draw_court_features(frame, court_features):
             cv2.putText(frame, f'C{i+1}', (corner[0]+10, corner[1]-10),
                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
 
-    # Draw three-point line
-    if court_features.three_point_line:
-        points = np.array(court_features.three_point_line, dtype=np.int32)
-        cv2.polylines(frame, [points], False, (255, 0, 0), 2)  # Blue three-point line
+# Removed _draw_enhanced_court_features - now using SimplifiedCourtDetector.draw_court_features
 
     # Draw center circle
     if court_features.center_circle:

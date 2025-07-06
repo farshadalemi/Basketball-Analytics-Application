@@ -19,14 +19,14 @@ FROM base AS dependencies
 
 WORKDIR /app
 
-# Copy requirements file (using minimal version for faster builds)
-COPY requirements-minimal.txt .
+# Copy requirements file (using CPU-only version)
+COPY requirements-cpu.txt .
 
 # Install dependencies with optimized settings
 RUN pip install --no-cache-dir \
     --timeout 300 \
     --retries 3 \
-    -r requirements-minimal.txt
+    -r requirements-cpu.txt
 
 # Final stage
 FROM base AS final
@@ -47,6 +47,12 @@ ENV PYTHONPATH=/app
 ENV OMP_NUM_THREADS=1
 ENV MKL_NUM_THREADS=1
 ENV NUMEXPR_NUM_THREADS=1
+
+# Set matplotlib cache directory to avoid permission issues
+ENV MPLCONFIGDIR=/tmp/matplotlib
+
+# Set EasyOCR cache directory to avoid permission issues
+ENV EASYOCR_MODULE_PATH=/tmp/easyocr
 
 # Create non-root user for security
 RUN groupadd -r appuser && useradd -r -g appuser appuser
