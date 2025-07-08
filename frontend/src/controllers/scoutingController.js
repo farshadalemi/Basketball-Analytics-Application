@@ -1,122 +1,329 @@
 /**
  * Scouting controller
- * Handles API calls for scouting reports
+ * Handles API calls for basketball video analysis
  */
-import { fetchWithAuth } from '../utils/fetchInterceptor';
+import axios from 'axios';
+import { getUserFromStorage } from '../models/auth';
+import { ENDPOINTS } from '../config/api';
 
 /**
- * Get all reports for the current user
+ * Start video analysis
+ * @param {number} videoId - Video ID to analyze
+ * @param {Object} analysisOptions - Analysis configuration options
  * @param {Function} onSuccess - Success callback
  * @param {Function} onError - Error callback
  */
-export const getReports = async (onSuccess, onError) => {
+export const startVideoAnalysis = async (videoId, analysisOptions, onSuccess, onError) => {
   try {
-    const response = await fetchWithAuth(`${process.env.REACT_APP_SCOUTING_API_URL}/reports`);
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to fetch reports');
+    // Get user token from storage
+    const userData = getUserFromStorage();
+    if (!userData || !userData.token) {
+      const errorMessage = 'Authentication required';
+      if (onError) onError(errorMessage);
+      throw new Error(errorMessage);
     }
 
-    if (data.status === 'success' && data.data) {
-      onSuccess(data.data);
-    } else {
-      onError(data.message || 'Failed to fetch reports');
-    }
-  } catch (error) {
-    console.error('Error fetching reports:', error);
-    onError(error.message);
-  }
-};
-
-/**
- * Get a report by ID
- * @param {number} reportId - Report ID
- * @param {Function} onSuccess - Success callback
- * @param {Function} onError - Error callback
- */
-export const getReportById = async (reportId, onSuccess, onError) => {
-  try {
-    const response = await fetchWithAuth(`${process.env.REACT_APP_SCOUTING_API_URL}/reports/${reportId}`);
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to fetch report');
-    }
-
-    if (data.status === 'success' && data.data) {
-      onSuccess(data.data);
-    } else {
-      onError(data.message || 'Failed to fetch report');
-    }
-  } catch (error) {
-    console.error('Error fetching report:', error);
-    onError(error.message);
-  }
-};
-
-/**
- * Create a new report
- * @param {Object} reportData - Report data
- * @param {Function} onSuccess - Success callback
- * @param {Function} onError - Error callback
- */
-export const createReport = async (reportData, onSuccess, onError) => {
-  try {
-    const response = await fetchWithAuth(
-      `${process.env.REACT_APP_SCOUTING_API_URL}/reports`,
+    const response = await axios.post(
+      ENDPOINTS.SCOUTING.ANALYZE(videoId),
+      analysisOptions || {},
       {
-        method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(reportData),
+          'Authorization': `Bearer ${userData.token}`,
+          'Content-Type': 'application/json'
+        }
       }
     );
-    const data = await response.json();
 
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to create report');
-    }
-
-    if (data.status === 'success') {
-      onSuccess(data.data);
-    } else {
-      onError(data.message || 'Failed to create report');
-    }
+    if (onSuccess) onSuccess(response.data);
+    return response.data;
   } catch (error) {
-    console.error('Error creating report:', error);
-    onError(error.message);
+    console.error('Failed to start video analysis:', error);
+
+    const errorMessage = error.response?.data?.detail ||
+                         error.response?.data?.message ||
+                         error.message ||
+                         'Failed to start video analysis';
+
+    if (onError) onError(errorMessage);
+    throw error;
   }
 };
 
 /**
- * Delete a report
- * @param {number} reportId - Report ID
+ * Get analysis job status
+ * @param {string} jobId - Analysis job ID
  * @param {Function} onSuccess - Success callback
  * @param {Function} onError - Error callback
  */
-export const deleteReport = async (reportId, onSuccess, onError) => {
+export const getAnalysisStatus = async (jobId, onSuccess, onError) => {
   try {
-    const response = await fetchWithAuth(
-      `${process.env.REACT_APP_SCOUTING_API_URL}/reports/${reportId}`,
+    // Get user token from storage
+    const userData = getUserFromStorage();
+    if (!userData || !userData.token) {
+      const errorMessage = 'Authentication required';
+      if (onError) onError(errorMessage);
+      throw new Error(errorMessage);
+    }
+
+    const response = await axios.get(
+      ENDPOINTS.SCOUTING.JOB_STATUS(jobId),
       {
-        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${userData.token}`
+        }
       }
     );
-    const data = await response.json();
 
-    if (!response.ok) {
-      throw new Error(data.message || 'Failed to delete report');
-    }
-
-    if (data.status === 'success') {
-      onSuccess();
-    } else {
-      onError(data.message || 'Failed to delete report');
-    }
+    if (onSuccess) onSuccess(response.data);
+    return response.data;
   } catch (error) {
-    console.error('Error deleting report:', error);
-    onError(error.message);
+    console.error('Failed to get analysis status:', error);
+
+    const errorMessage = error.response?.data?.detail ||
+                         error.response?.data?.message ||
+                         error.message ||
+                         'Failed to get analysis status';
+
+    if (onError) onError(errorMessage);
+    throw error;
+  }
+};
+
+/**
+ * Get analysis result
+ * @param {string} jobId - Analysis job ID
+ * @param {Function} onSuccess - Success callback
+ * @param {Function} onError - Error callback
+ */
+export const getAnalysisResult = async (jobId, onSuccess, onError) => {
+  try {
+    // Get user token from storage
+    const userData = getUserFromStorage();
+    if (!userData || !userData.token) {
+      const errorMessage = 'Authentication required';
+      if (onError) onError(errorMessage);
+      throw new Error(errorMessage);
+    }
+
+    const response = await axios.get(
+      ENDPOINTS.SCOUTING.JOB_RESULT(jobId),
+      {
+        headers: {
+          'Authorization': `Bearer ${userData.token}`
+        }
+      }
+    );
+
+    if (onSuccess) onSuccess(response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to get analysis result:', error);
+
+    const errorMessage = error.response?.data?.detail ||
+                         error.response?.data?.message ||
+                         error.message ||
+                         'Failed to get analysis result';
+
+    if (onError) onError(errorMessage);
+    throw error;
+  }
+};
+
+/**
+ * List all analysis jobs
+ * @param {Function} onSuccess - Success callback
+ * @param {Function} onError - Error callback
+ */
+export const listAnalysisJobs = async (onSuccess, onError) => {
+  try {
+    // Get user token from storage
+    const userData = getUserFromStorage();
+    if (!userData || !userData.token) {
+      const errorMessage = 'Authentication required';
+      if (onError) onError(errorMessage);
+      throw new Error(errorMessage);
+    }
+
+    const response = await axios.get(
+      ENDPOINTS.SCOUTING.JOBS,
+      {
+        headers: {
+          'Authorization': `Bearer ${userData.token}`
+        }
+      }
+    );
+
+    if (onSuccess) onSuccess(response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to list analysis jobs:', error);
+
+    const errorMessage = error.response?.data?.detail ||
+                         error.response?.data?.message ||
+                         error.message ||
+                         'Failed to list analysis jobs';
+
+    if (onError) onError(errorMessage);
+    throw error;
+  }
+};
+
+/**
+ * Delete analysis job
+ * @param {string} jobId - Analysis job ID
+ * @param {Function} onSuccess - Success callback
+ * @param {Function} onError - Error callback
+ */
+export const deleteAnalysisJob = async (jobId, onSuccess, onError) => {
+  try {
+    // Get user token from storage
+    const userData = getUserFromStorage();
+    if (!userData || !userData.token) {
+      const errorMessage = 'Authentication required';
+      if (onError) onError(errorMessage);
+      throw new Error(errorMessage);
+    }
+
+    const response = await axios.delete(
+      ENDPOINTS.SCOUTING.DELETE_JOB(jobId),
+      {
+        headers: {
+          'Authorization': `Bearer ${userData.token}`
+        }
+      }
+    );
+
+    if (onSuccess) onSuccess(response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to delete analysis job:', error);
+
+    const errorMessage = error.response?.data?.detail ||
+                         error.response?.data?.message ||
+                         error.message ||
+                         'Failed to delete analysis job';
+
+    if (onError) onError(errorMessage);
+    throw error;
+  }
+};
+
+// Alias for backward compatibility
+export const deleteReport = deleteAnalysisJob;
+
+/**
+ * Get reports (alias for listAnalysisJobs)
+ * @param {Function} onSuccess - Success callback
+ * @param {Function} onError - Error callback
+ */
+export const getReports = listAnalysisJobs;
+
+/**
+ * Upload CSV file for statistics-based scouting reports
+ * @param {File} csvFile - CSV file to upload
+ * @param {Function} onProgress - Progress callback
+ * @param {Function} onSuccess - Success callback
+ * @param {Function} onError - Error callback
+ */
+export const uploadCsvStats = async (csvFile, onProgress, onSuccess, onError) => {
+  try {
+    // Get user token from storage
+    const userData = getUserFromStorage();
+    if (!userData || !userData.token) {
+      const errorMessage = 'Authentication required';
+      if (onError) onError(errorMessage);
+      throw new Error(errorMessage);
+    }
+
+    // Create form data
+    const formData = new FormData();
+    formData.append('csv_file', csvFile);
+
+    const response = await axios.post(
+      `${ENDPOINTS.SCOUTING.BASE}/upload-csv`,
+      formData,
+      {
+        headers: {
+          'Authorization': `Bearer ${userData.token}`,
+          'Content-Type': 'multipart/form-data'
+        },
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          if (onProgress) onProgress(percentCompleted);
+        }
+      }
+    );
+
+    if (onSuccess) onSuccess(response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to upload CSV file:', error);
+
+    const errorMessage = error.response?.data?.detail ||
+                         error.response?.data?.message ||
+                         error.message ||
+                         'Failed to upload CSV file';
+
+    if (onError) onError(errorMessage);
+    throw error;
+  }
+};
+
+/**
+ * Get report by ID (alias for getAnalysisResult)
+ * @param {string} reportId - Report/Job ID
+ * @param {Function} onSuccess - Success callback
+ * @param {Function} onError - Error callback
+ */
+export const getReportById = getAnalysisResult;
+
+/**
+ * Create report (alias for startVideoAnalysis)
+ * @param {number} videoId - Video ID to analyze
+ * @param {Object} analysisOptions - Analysis configuration options
+ * @param {Function} onSuccess - Success callback
+ * @param {Function} onError - Error callback
+ */
+export const createReport = startVideoAnalysis;
+
+/**
+ * Get analysis jobs for a specific video
+ * @param {number} videoId - Video ID
+ * @param {Function} onSuccess - Success callback
+ * @param {Function} onError - Error callback
+ */
+export const getVideoAnalysisJobs = async (videoId, onSuccess, onError) => {
+  try {
+    // Get user token from storage
+    const userData = getUserFromStorage();
+    if (!userData || !userData.token) {
+      const errorMessage = 'Authentication required';
+      if (onError) onError(errorMessage);
+      throw new Error(errorMessage);
+    }
+
+    const response = await axios.get(
+      ENDPOINTS.SCOUTING.VIDEO_JOBS(videoId),
+      {
+        headers: {
+          'Authorization': `Bearer ${userData.token}`
+        }
+      }
+    );
+
+    if (onSuccess) onSuccess(response.data.jobs);
+    return response.data.jobs;
+  } catch (error) {
+    console.error('Failed to get video analysis jobs:', error);
+
+    const errorMessage = error.response?.data?.detail ||
+                         error.response?.data?.message ||
+                         error.message ||
+                         'Failed to get video analysis jobs';
+
+    if (onError) onError(errorMessage);
+    throw error;
   }
 };

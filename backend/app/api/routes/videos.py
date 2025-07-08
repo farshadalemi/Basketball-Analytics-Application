@@ -71,6 +71,18 @@ def upload_video(
             video_id=video.id
         )
 
+        # Optionally start analysis automatically (can be enabled/disabled)
+        # Uncomment the following lines to enable automatic analysis after upload
+        # from app.services.scouting_service import scouting_service_client
+        # from app.repositories.analysis_job_repository import analysis_job_repository
+        # from app.schemas.analysis_job import AnalysisJobCreate
+        # background_tasks.add_task(
+        #     auto_start_analysis,
+        #     db=db,
+        #     video_id=video.id,
+        #     user_id=current_user.id
+        # )
+
         return video
     except HTTPException as he:
         # Log HTTP exceptions

@@ -145,3 +145,54 @@ class AuthService:
 
 # Create a singleton instance
 auth_service = AuthService()
+
+
+# Dependency functions for FastAPI
+def get_current_user(
+    db: Session = Depends(get_db),
+    token: str = Depends(oauth2_scheme)
+) -> User:
+    """Get the current user from the token."""
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
+        token_data = TokenPayload(**payload)
+    except (JWTError, ValidationError):
+        raise credentials_exception
+
+    user = user_repository.get(db=db, id=token_data.sub)
+    if not user:
+        raise credentials_exception
+    return user
+
+
+def get_current_active_user(
+    current_user: User = Depends(get_current_user)
+) -> User:
+    """Get the current active user."""
+    if not user_repository.is_active(current_user):
+        raise HTTPException(status_code=400, detail="Inactive user")
+    return current_user
+
+
+def get_current_active_admin(
+    current_user: User = Depends(get_current_active_user)
+) -> User:
+    """Get the current active admin."""
+    if not user_repository.is_admin(current_user):
+        raise HTTPException(
+            status_code=403, detail="The user doesn't have enough privileges"
+        )
+    return current_user
+
+
+# Add the dependency functions to the auth_service instance for backward compatibility
+auth_service.get_current_user = get_current_user
+auth_service.get_current_active_user = get_current_active_user
+auth_service.get_current_active_admin = get_current_active_admin

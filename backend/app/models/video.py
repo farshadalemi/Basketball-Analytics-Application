@@ -22,4 +22,5 @@ class Video(Base):
     thumbnail_url = Column(String, nullable=True)
     processed_at = Column(DateTime, nullable=True)
 
-    owner = relationship("User", back_populates="videos") 
+    owner = relationship("User", back_populates="videos")
+    analysis_jobs = relationship("AnalysisJob", back_populates="video")

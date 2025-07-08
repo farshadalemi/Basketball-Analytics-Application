@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import auth, videos, users, admin, direct_stream
+from app.api.routes import auth, videos, users, admin, direct_stream, scouting
 from app.api.responses import ResponseModel
 from app.core.config import settings
 from app.core.events import EventType, event_bus
@@ -60,6 +60,7 @@ app.include_router(videos.router, prefix="/api")
 app.include_router(users.router, prefix="/api")
 app.include_router(admin.router, prefix="/api")
 app.include_router(direct_stream.router, prefix="/api/direct")
+app.include_router(scouting.router, prefix="/api")
 
 
 @app.get("/")

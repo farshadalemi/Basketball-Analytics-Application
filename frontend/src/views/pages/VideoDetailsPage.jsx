@@ -23,14 +23,17 @@ import {
   Delete as DeleteIcon,
   Edit as EditIcon,
   Share as ShareIcon,
-  Folder as FolderIcon
+  Folder as FolderIcon,
+  Analytics as AnalyticsIcon
 } from '@mui/icons-material';
 import { useToast } from '../../context/ToastContext';
 import Loading from '../components/common/Loading';
 import BasicVideoPlayer from '../components/video/BasicVideoPlayer';
 import { ENDPOINTS } from '../../config/api';
 import VideoTagsEditor from '../components/video/VideoTagsEditor';
+import AnalysisResults from '../components/scouting/AnalysisResults';
 import { getVideoById, deleteVideo, getVideos, updateVideo, getVideoStreamingUrl } from '../../controllers/videoController';
+import { startVideoAnalysis, getAnalysisStatus, getVideoAnalysisJobs } from '../../controllers/scoutingController';
 import { getVideoStatusText, isVideoReady } from '../../models/video';
 
 /**
@@ -44,10 +47,59 @@ const VideoDetailsPage = () => {
   const [video, setVideo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [analysisJobId, setAnalysisJobId] = useState(null);
+  const [analysisStatus, setAnalysisStatus] = useState(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [analysisJobs, setAnalysisJobs] = useState([]);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   // We only need isMobile for responsive design
+
+  // Load analysis jobs for the video
+  const loadAnalysisJobs = async () => {
+    if (!id) {
+      console.warn('No video ID available for loading analysis jobs');
+      return;
+    }
+
+    try {
+      await getVideoAnalysisJobs(
+        parseInt(id),
+        (jobs) => {
+          setAnalysisJobs(jobs);
+          // If there's a recent job, set it as the current analysis
+          if (jobs.length > 0) {
+            const latestJob = jobs[0]; // Jobs are ordered by created_at desc
+            setAnalysisJobId(latestJob.job_id);
+            setAnalysisStatus(latestJob.status);
+
+            // Only start polling if job is actually running/pending and job_id exists
+            if (latestJob.job_id && (latestJob.status === 'running' || latestJob.status === 'pending')) {
+              // First verify the job exists before starting polling
+              getAnalysisStatus(
+                latestJob.job_id,
+                (statusData) => {
+                  // Job exists, start polling
+                  pollAnalysisStatus(latestJob.job_id);
+                },
+                (error) => {
+                  console.warn('Job does not exist, not starting polling:', error);
+                  setAnalysisJobId(null);
+                  setAnalysisStatus(null);
+                }
+              );
+            }
+          }
+        },
+        (error) => {
+          console.warn('Could not load analysis jobs:', error);
+        }
+      );
+    } catch (error) {
+      console.warn('Error loading analysis jobs:', error);
+    }
+  };
 
   // Fetch video on mount
   useEffect(() => {
@@ -100,6 +152,9 @@ const VideoDetailsPage = () => {
             // Don't navigate away, we'll show a fallback UI
           }
         );
+
+        // Load analysis jobs after video is loaded
+        await loadAnalysisJobs();
       } catch (error) {
         console.error('Error fetching video:', error);
       } finally {
@@ -126,6 +181,93 @@ const VideoDetailsPage = () => {
     }
   };
 
+  // Handle analysis start
+  const handleStartAnalysis = async () => {
+    if (!video || !isVideoReady(video)) {
+      showError('Video must be processed before analysis can begin');
+      return;
+    }
+
+    setAnalysisLoading(true);
+    try {
+      await startVideoAnalysis(
+        parseInt(id),
+        {}, // Default analysis options
+        (result) => {
+          setAnalysisJobId(result.job_id);
+          setAnalysisStatus('started');
+          showSuccess('Basketball analysis started! Check back in a few minutes.');
+          // Start polling for status
+          pollAnalysisStatus(result.job_id);
+        },
+        (error) => {
+          showError(`Failed to start analysis: ${error}`);
+          setAnalysisLoading(false);
+        }
+      );
+    } catch (error) {
+      console.error('Error starting analysis:', error);
+      setAnalysisLoading(false);
+    }
+  };
+
+  // Poll analysis status
+  const pollAnalysisStatus = async (jobId) => {
+    const pollInterval = setInterval(async () => {
+      try {
+        await getAnalysisStatus(
+          jobId,
+          (statusData) => {
+            setAnalysisStatus(statusData.status);
+
+            if (statusData.status === 'completed') {
+              clearInterval(pollInterval);
+              setAnalysisLoading(false);
+              showSuccess('Basketball analysis completed!');
+            } else if (statusData.status === 'failed') {
+              clearInterval(pollInterval);
+              setAnalysisLoading(false);
+              showError('Analysis failed. Please try again.');
+            }
+          },
+          (error) => {
+            console.error('Error polling analysis status:', error);
+            // Stop polling on any error (including 404)
+            clearInterval(pollInterval);
+            setAnalysisLoading(false);
+            setAnalysisJobId(null); // Clear the job ID to stop further attempts
+
+            // Only show error if it's not a 404 (job not found)
+            if (!error.includes('404') && !error.includes('Not Found')) {
+              showError('Failed to get analysis status. Polling stopped.');
+            }
+          }
+        );
+      } catch (error) {
+        console.error('Error in polling:', error);
+        // Stop polling on any error
+        clearInterval(pollInterval);
+        setAnalysisLoading(false);
+        setAnalysisJobId(null); // Clear the job ID to stop further attempts
+
+        // Check if it's a 404 error
+        if (error.response?.status === 404) {
+          console.warn('Analysis job not found, stopping polling');
+        } else {
+          showError('Analysis polling failed. Please refresh the page.');
+        }
+      }
+    }, 5000); // Poll every 5 seconds
+
+    // Clear interval after 10 minutes to prevent infinite polling
+    setTimeout(() => {
+      clearInterval(pollInterval);
+      if (analysisLoading) {
+        setAnalysisLoading(false);
+      }
+    }, 600000);
+  };
+
   // Format date
   const formatDate = (dateString) => {
     if (!dateString) return 'Unknown date';
@@ -140,6 +282,21 @@ const VideoDetailsPage = () => {
         return 'success';
       case 'processing':
         return 'warning';
+      case 'failed':
+        return 'error';
+      default:
+        return 'default';
+    }
+  };
+
+  // Get analysis status color
+  const getAnalysisStatusColor = (status) => {
+    switch (status) {
+      case 'completed':
+        return 'success';
+      case 'running':
+      case 'started':
+        return 'info';
       case 'failed':
         return 'error';
       default:
@@ -215,6 +372,15 @@ const VideoDetailsPage = () => {
 
           <Box sx={{ alignSelf: { xs: 'flex-end', sm: 'auto' } }}>
             <IconButton
+              color="secondary"
+              onClick={handleStartAnalysis}
+              disabled={!isVideoReady(video) || analysisLoading}
+              size={isMobile ? "small" : "medium"}
+              title="Start Basketball Analysis"
+            >
+              <AnalyticsIcon fontSize={isMobile ? "small" : "medium"} />
+            </IconButton>
+            <IconButton
               color="primary"
               disabled
               size={isMobile ? "small" : "medium"}
@@ -251,6 +417,14 @@ const VideoDetailsPage = () => {
             size="small"
             sx={{ mr: { xs: 1, sm: 2 } }}
           />
+          {analysisStatus && (
+            <Chip
+              label={`Analysis: ${analysisStatus}`}
+              color={getAnalysisStatusColor(analysisStatus)}
+              size="small"
+              sx={{ mr: { xs: 1, sm: 2 } }}
+            />
+          )}
           <Typography
             variant={isMobile ? "caption" : "body2"}
             color="text.secondary"
@@ -455,6 +629,14 @@ const VideoDetailsPage = () => {
           </Grid>
         </Grid>
       </Paper>
+
+      {/* Analysis Results */}
+      {analysisJobId && (
+        <AnalysisResults
+          jobId={analysisJobId}
+          videoTitle={video.title}
+        />
+      )}
 
       {/* Delete Confirmation Dialog */}
       <Dialog

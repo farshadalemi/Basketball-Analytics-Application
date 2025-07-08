@@ -61,6 +61,7 @@ class Settings(BaseSettings):
 
     # Microservices
     ANALYTICS_SERVICE_URL: Optional[str] = None
+    SCOUTING_SERVICE_URL: str = os.getenv("SCOUTING_SERVICE_URL", "http://scouting-service:8001")
 
     @field_validator("ENVIRONMENT", mode="before")
     @classmethod

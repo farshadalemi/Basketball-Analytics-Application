@@ -23,7 +23,7 @@ export const getVideos = async (onSuccess, onError) => {
     }
 
     // Set authorization header
-    const response = await axios.get(`${ENDPOINTS.VIDEOS.LIST}?self=true`, {
+    const response = await axios.get(ENDPOINTS.VIDEOS.LIST, {
       headers: {
         'Authorization': `Bearer ${userData.token}`
       }

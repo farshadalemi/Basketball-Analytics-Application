@@ -20,7 +20,10 @@ import {
   MoreVert as MoreIcon,
   Download as DownloadIcon,
   Delete as DeleteIcon,
-  Visibility as ViewIcon
+  Visibility as ViewIcon,
+  VideoLibrary as VideoIcon,
+  TableChart as CsvIcon,
+  PictureAsPdf as PdfIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../../context/ToastContext';
@@ -58,6 +61,28 @@ const getStatusColor = (status) => {
       return 'error';
     default:
       return 'default';
+  }
+};
+
+/**
+ * Get status text
+ * @param {string} status - Report status
+ * @returns {string} Human readable status text
+ */
+const getStatusText = (status) => {
+  switch (status) {
+    case 'completed':
+      return 'Completed';
+    case 'processing':
+      return 'Processing';
+    case 'queued':
+      return 'Queued';
+    case 'failed':
+      return 'Failed';
+    case 'pending':
+      return 'Pending';
+    default:
+      return 'Unknown';
   }
 };
 
@@ -129,9 +154,14 @@ const ReportCard = ({ report, onRefresh }) => {
     >
       <CardContent sx={{ flexGrow: 1 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-          <Typography variant="h6" component="div" noWrap>
-            {report.title}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1, mr: 1 }}>
+            <Box sx={{ mr: 1, color: report.report_type === 'csv' ? 'info.main' : 'primary.main' }}>
+              {report.report_type === 'csv' || report.csv_file_name ? <CsvIcon /> : <VideoIcon />}
+            </Box>
+            <Typography variant="h6" component="div" noWrap>
+              {report.title}
+            </Typography>
+          </Box>
           <IconButton
             aria-label="more"
             id={`report-menu-button-${report.id}`}
@@ -144,13 +174,22 @@ const ReportCard = ({ report, onRefresh }) => {
             <MoreIcon />
           </IconButton>
         </Box>
-        
-        <Chip
-          label={report.status}
-          color={getStatusColor(report.status)}
-          size="small"
-          sx={{ mb: 2 }}
-        />
+
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+          <Chip
+            icon={report.report_type === 'csv' || report.csv_file_name ? <CsvIcon /> : <VideoIcon />}
+            label={report.report_type === 'csv' || report.csv_file_name ? 'CSV Stats' : 'Video Analysis'}
+            color={report.report_type === 'csv' || report.csv_file_name ? 'info' : 'primary'}
+            size="small"
+            variant="outlined"
+          />
+
+          <Chip
+            label={getStatusText(report.status)}
+            color={getStatusColor(report.status)}
+            size="small"
+          />
+        </Box>
         
         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
           {report.description || 'No description'}
@@ -159,14 +198,30 @@ const ReportCard = ({ report, onRefresh }) => {
         <Divider sx={{ my: 1 }} />
         
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-          <Typography variant="body2" color="text.secondary">
-            <strong>Video:</strong> {report.video_title || 'Unknown'}
-          </Typography>
-          
-          <Typography variant="body2" color="text.secondary">
-            <strong>Team:</strong> {report.team_name || 'Not specified'}
-          </Typography>
-          
+          {report.video_title && (
+            <Typography variant="body2" color="text.secondary">
+              <strong>Video:</strong> {report.video_title}
+            </Typography>
+          )}
+
+          {report.csv_file_name && (
+            <Typography variant="body2" color="text.secondary">
+              <strong>CSV File:</strong> {report.csv_file_name}
+            </Typography>
+          )}
+
+          {report.team_name && (
+            <Typography variant="body2" color="text.secondary">
+              <strong>Team:</strong> {report.team_name}
+            </Typography>
+          )}
+
+          {report.opponent_name && (
+            <Typography variant="body2" color="text.secondary">
+              <strong>Opponent:</strong> {report.opponent_name}
+            </Typography>
+          )}
+
           <Typography variant="body2" color="text.secondary">
             <strong>Created:</strong> {formatDate(report.created_at)}
           </Typography>
@@ -186,17 +241,18 @@ const ReportCard = ({ report, onRefresh }) => {
           startIcon={<ViewIcon />}
           onClick={handleView}
         >
-          View
+          View Details
         </Button>
-        
+
         <Button
           variant="contained"
           size="small"
-          startIcon={<DownloadIcon />}
+          startIcon={<PdfIcon />}
           onClick={handleDownload}
           disabled={report.status !== 'completed' || !report.download_url}
+          color={report.status === 'completed' ? 'success' : 'primary'}
         >
-          Download
+          {report.status === 'completed' ? 'Download PDF' : 'Processing...'}
         </Button>
       </CardActions>
       

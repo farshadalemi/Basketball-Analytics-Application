@@ -30,6 +30,7 @@ const ProfilePage = React.lazy(() => import('./views/pages/ProfilePage'));
 
 // Scouting report pages
 const ScoutingReportPage = React.lazy(() => import('./views/pages/ScoutingReportPage'));
+const VideoAnalysisPage = React.lazy(() => import('./views/pages/VideoAnalysisPage'));
 const ReportDetailsPage = React.lazy(() => import('./views/pages/ReportDetailsPage'));
 
 // Admin pages
@@ -87,8 +88,9 @@ const App = () => {
                     <Route path="/upload" element={<UploadVideoPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
 
-                    {/* Scouting Report Routes */}
-                    <Route path="/scouting" element={<ScoutingReportPage />} />
+                    {/* Scouting Routes */}
+                    <Route path="/scouting" element={<VideoAnalysisPage />} />
+                    <Route path="/scouting/reports" element={<ScoutingReportPage />} />
                     <Route path="/scouting/reports/:reportId" element={<ReportDetailsPage />} />
 
                     {/* Admin Routes */}

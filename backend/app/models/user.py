@@ -13,4 +13,5 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
     
-    videos = relationship("Video", back_populates="owner") 
+    videos = relationship("Video", back_populates="owner")
+    analysis_jobs = relationship("AnalysisJob", back_populates="user")

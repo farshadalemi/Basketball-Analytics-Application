@@ -16,6 +16,7 @@ email-validator>=2.0.0
 
 # Microservice integration
 requests>=2.31.0
+httpx>=0.25.0
 
 # Logging and monitoring
 python-json-logger>=2.0.7

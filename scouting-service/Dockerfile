@@ -1,39 +1,37 @@
-FROM python:3.12
+FROM python:3.9-slim
 
 WORKDIR /app
 
-# Install system dependencies for OpenCV and WeasyPrint
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     libgl1-mesa-glx \
     libglib2.0-0 \
-    libcairo2 \
-    libpango-1.0-0 \
-    libpangocairo-1.0-0 \
-    libgdk-pixbuf2.0-0 \
-    libffi-dev \
-    shared-mime-info \
+    libgstreamer1.0-0 \
+    libgstreamer-plugins-base1.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements file
+# Copy requirements first for better caching
 COPY requirements.txt .
 
-# Install dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install PyTorch CPU version first to avoid CUDA dependencies
+# Using PyTorch 2.1+ to support CLIPModel requirements
+RUN pip install torch==2.1.0+cpu torchvision==0.16.0+cpu --index-url https://download.pytorch.org/whl/cpu
 
-# Copy application code
+# Install other requirements
+RUN pip install -r requirements.txt
+
+# Copy the rest of the application
 COPY . .
 
-# Set Python path environment variable
-ENV PYTHONPATH=/app
+# Create necessary directories
+RUN mkdir -p input_videos output_videos models stubs
 
-# Install wait-for-it script
-RUN apt-get update && apt-get install -y wget
-RUN wget -O /usr/local/bin/wait-for-it.sh https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && \
-    chmod +x /usr/local/bin/wait-for-it.sh
-
-# Expose port
+# Expose port for the web service
 EXPOSE 8001
 
-# Command to run the application
-CMD /usr/local/bin/wait-for-it.sh db:5432 -t 60 -- \
-    uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
+# Start the web service instead of CLI
+CMD ["python", "app.py"]

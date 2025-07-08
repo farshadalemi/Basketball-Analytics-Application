@@ -1,1 +1,0 @@
-"""Scouting Report Microservice."""

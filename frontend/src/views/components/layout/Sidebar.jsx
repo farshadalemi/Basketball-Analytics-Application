@@ -54,9 +54,14 @@ const Sidebar = ({ open, onClose }) => {
       path: '/upload'
     },
     {
-      text: 'Scouting Reports',
+      text: 'Video Analysis',
       icon: <ScoutingIcon />,
       path: '/scouting'
+    },
+    {
+      text: 'Scouting Reports',
+      icon: <ScoutingIcon />,
+      path: '/scouting/reports'
     }
   ];
 
